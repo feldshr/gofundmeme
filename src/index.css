@@ -1,0 +1,33 @@
+header .wallet-adapter-button,
+header .wallet-adapter-dropdown-list,
+.wallet-adapter-modal-wrapper,
+.wallet-adapter-button {
+  font-family: Fredoka, serif !important;
+}
+
+.custom-zoom [data-rmiz-modal-overlay="hidden"] {
+  background-color: transparent;
+}
+
+.custom-zoom [data-rmiz-modal-overlay="visible"] {
+  backdrop-filter: blur(7px);
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
+[data-hide="true"] {
+  display: none;
+}
+
+html[data-mantine-color-scheme="light"],
+html[data-mantine-color-scheme="light"] body {
+  background-color: #121216;
+}
+
+html[data-mantine-color-scheme="dark"],
+html[data-mantine-color-scheme="dark"] body {
+  background-color: #202125;
+}
+
+.mantine-Input-input:not([data-variant="filled"]) {
+  background-color: transparent !important;
+}

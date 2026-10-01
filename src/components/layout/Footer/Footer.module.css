@@ -1,0 +1,19 @@
+.footer {
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
+}
+
+.afterFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0;
+  @media (max-width: $mantine-breakpoint-xs) {
+    flex-direction: column;
+  }
+}
+
+.social {
+  @media (max-width: $mantine-breakpoint-xs) {
+    margin-top: var(--mantine-spacing-xs);
+  }
+}

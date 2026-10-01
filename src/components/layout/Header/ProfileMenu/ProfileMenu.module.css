@@ -1,0 +1,12 @@
+.targetButton {
+  height: rem(42);
+  & :global(.mantine-Button-label) {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    justify-content: center;
+    @media (min-width: $mantine-breakpoint-xs) {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+}

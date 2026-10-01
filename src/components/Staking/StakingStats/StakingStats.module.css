@@ -1,0 +1,11 @@
+.value {
+  font-size: rem(24px);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.diff {
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}

@@ -1,0 +1,23 @@
+.header {
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
+  transition: all 250ms ease-in-out;
+  @media (min-width: $mantine-breakpoint-sm) {
+    &[data-big-p="true"] {
+      padding: var(--mantine-spacing-md) var(--mantine-spacing-xl);
+    }
+  }
+}
+
+.mainMenu {
+  display: none;
+  @media (min-width: $mantine-breakpoint-md) {
+    display: flex;
+  }
+}
+
+.hideOnMobile {
+  display: none;
+  @media (min-width: $mantine-breakpoint-xs) {
+    display: inline-flex;
+  }
+}
