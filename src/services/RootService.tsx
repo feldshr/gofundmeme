@@ -11,11 +11,16 @@ import {
   getGfmUsdRateOptions,
   getSolUsdRateOptions,
 } from "../query/queryOptions";
-import { PUBLIC_RPC_URL, type ExplorerKey } from "../constants";
+import {
+  DEFAULT_PRIORITY_FEE,
+  PUBLIC_RPC_URL,
+  type ExplorerKey,
+  type RpcType,
+} from "../constants";
 import useLocalStorage from "../hooks/useLocalStorage";
 import { checkIsValidUrl } from "../utils";
 
-export type RpcType = "public" | "custom";
+export type { RpcType };
 
 type RootServiceType = {
   isFeeModalOpen: boolean;
@@ -43,7 +48,10 @@ export const RootService = ({ children }: PropsWithChildren) => {
   const { data: gfmRate } = useQuery(getGfmUsdRateOptions());
   const [isFeeModalOpen, { open: openFeeModal, close: closeFeeModal }] =
     useDisclosure(false);
-  const [priorityFee, setPriorityFee] = useLocalStorage("priorityFee", 0.0001);
+  const [priorityFee, setPriorityFee] = useLocalStorage(
+    "priorityFee",
+    DEFAULT_PRIORITY_FEE,
+  );
   const [explorer, setExplorer] = useLocalStorage<ExplorerKey>(
     "explorer",
     "solscan",
