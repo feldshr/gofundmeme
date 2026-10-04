@@ -2,7 +2,8 @@ import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { PublicKey } from "@solana/web3.js";
 
 export const NETWORK = WalletAdapterNetwork.Mainnet;
-export const RPC_ENDPOINT_URL = "https://solana.publicnode.com"; //
+export const PUBLIC_RPC_URL = "https://solana.publicnode.com";
+export const RPC_ENDPOINT_URL = PUBLIC_RPC_URL;
 export const COMMITMENT = "confirmed";
 
 export const GFM_Program = new PublicKey(

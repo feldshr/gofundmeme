@@ -12,10 +12,12 @@ import {
   PhantomWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import { RPC_ENDPOINT_URL } from "../constants";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
+import { useRoot } from "./hooks";
 
 export const WalletService = ({ children }: PropsWithChildren) => {
+  const { activeRpc } = useRoot();
+
   const wallets = [
     new PhantomWalletAdapter(),
     new CoinbaseWalletAdapter(),
@@ -25,7 +27,7 @@ export const WalletService = ({ children }: PropsWithChildren) => {
   ];
 
   return (
-    <ConnectionProvider endpoint={RPC_ENDPOINT_URL}>
+    <ConnectionProvider endpoint={activeRpc}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>{children}</WalletModalProvider>
       </WalletProvider>

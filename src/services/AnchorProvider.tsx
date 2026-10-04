@@ -1,8 +1,11 @@
 import React, { type ReactNode, useMemo, createContext } from "react";
 import { AnchorProvider as Provider } from "@coral-xyz/anchor";
-import { Connection } from "@solana/web3.js";
-import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
-import { COMMITMENT, RPC_ENDPOINT_URL } from "../constants";
+import {
+  useAnchorWallet,
+  useConnection,
+  useWallet,
+} from "@solana/wallet-adapter-react";
+import { COMMITMENT } from "../constants";
 
 interface AnchorProviderProps {
   children: ReactNode;
@@ -13,16 +16,13 @@ type AnchorProviderType = {
 };
 
 const ProviderContext = createContext<AnchorProviderType>(
-  {} as AnchorProviderType
+  {} as AnchorProviderType,
 );
 
 const AnchorProvider: React.FC<AnchorProviderProps> = ({ children }) => {
   const anchorWallet = useAnchorWallet();
   const wallet = useWallet();
-  const connection = useMemo(
-    () => new Connection(RPC_ENDPOINT_URL, COMMITMENT),
-    []
-  );
+  const { connection } = useConnection();
 
   const anchorProvider = useMemo(() => {
     if (

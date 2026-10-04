@@ -4,18 +4,18 @@ import {
   PublicKey,
   TransactionInstruction,
 } from "@solana/web3.js";
-import { COMMITMENT, RPC_ENDPOINT_URL, SOL_EXPLORERS } from "../constants";
+import { COMMITMENT, SOL_EXPLORERS } from "../constants";
 import { getAccount, getAssociatedTokenAddressSync } from "@solana/spl-token";
 import BN from "bn.js";
 import Decimal from "decimal.js";
-import { getExplorerLink, walletAddressToShorten } from "../utils";
+import { getActiveRpc, getExplorerLink, walletAddressToShorten } from "../utils";
 import { notifications } from "@mantine/notifications";
 import { Anchor } from "@mantine/core";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 export const getSolBalance = async (publicKey: PublicKey | null) => {
   if (!publicKey) return 0;
-  const connection = new Connection(RPC_ENDPOINT_URL, COMMITMENT);
+  const connection = new Connection(getActiveRpc(), COMMITMENT);
 
   const solBalance = await connection.getBalance(publicKey);
   const bnValue = new BN(solBalance.toString());
@@ -45,7 +45,7 @@ export const waitForTransaction = (
   timeout = 120_000,
 ) => {
   return new Promise((resolve, reject) => {
-    const connection = new Connection(RPC_ENDPOINT_URL, COMMITMENT);
+    const connection = new Connection(getActiveRpc(), COMMITMENT);
     const startTime = Date.now();
 
     const checkTransactionStatus = async () => {
