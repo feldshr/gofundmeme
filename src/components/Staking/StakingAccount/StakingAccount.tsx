@@ -1,5 +1,14 @@
-import { Box, Center, Divider, Flex, Loader, Stack, Text } from "@mantine/core";
-import { IconX } from "@tabler/icons-react";
+import {
+  Box,
+  Divider,
+  Grid,
+  Paper,
+  Skeleton,
+  Stack,
+  Text,
+  ThemeIcon,
+} from "@mantine/core";
+import { IconWallet, IconX } from "@tabler/icons-react";
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAnchorProvider, useRoot } from "../../../providers/hooks";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -14,20 +23,24 @@ import useCreateAccount from "../hooks/useCreateAccount";
 import { notifications } from "@mantine/notifications";
 import StakingRecords from "../StakingRecords/StakingRecords";
 import StakeForm from "../StakeForm/StakeForm";
-import { useCallback, useTransition } from "react";
+import { useCallback, useMemo, useTransition } from "react";
 import { showTransactionState } from "../../../utils/transactionNotifications";
 import ConnectWalletButton from "../../ConnectWalletButton";
 import CreateAccountPanel from "./CreateAccountPanel";
 import AccountSummary from "./AccountSummary";
+import { useStaking } from "../context/StakingContext";
+import { calculateRecordClaimableRewards } from "../utils";
 
 const StakingAccount = () => {
   const [isTransitionPending, startTransition] = useTransition();
   const { explorer, gfmRate, solRate } = useRoot();
+  const { stakingInfo } = useStaking();
   const queryClient = useQueryClient();
   const { publicKey } = useWallet();
   const { anchorProvider } = useAnchorProvider();
   const { mutateAsync: createAccount, isPending: createAccountLoading } =
     useCreateAccount();
+
   const { isPending: stakingAccountLoading, data: stakingAccount } = useQuery(
     queryOptions({
       queryKey: ["staking-account", publicKey?.toString()],
@@ -79,6 +92,31 @@ const StakingAccount = () => {
     }),
   );
 
+  const totalClaimableRewards = useMemo(() => {
+    if (!stakingAccount?.records || !stakingInfo?.cumulativeRewardsPerToken)
+      return 0;
+    return stakingAccount.records.reduce((acc, rec) => {
+      return (
+        acc +
+        calculateRecordClaimableRewards(
+          rec,
+          stakingInfo.cumulativeRewardsPerToken,
+        )
+      );
+    }, 0);
+  }, [stakingAccount?.records, stakingInfo?.cumulativeRewardsPerToken]);
+
+  const poolSharePercent = useMemo(() => {
+    if (
+      !stakedBalance ||
+      !stakingInfo?.totalStakedTokens ||
+      stakingInfo.totalStakedTokens <= 0
+    ) {
+      return 0;
+    }
+    return (stakedBalance / stakingInfo.totalStakedTokens) * 100;
+  }, [stakedBalance, stakingInfo?.totalStakedTokens]);
+
   const handleCreateAccount = useCallback(async () => {
     try {
       const signature = await createAccount();
@@ -109,7 +147,7 @@ const StakingAccount = () => {
       notifications.show({
         color: "red",
         withBorder: true,
-        title: "Error",
+        title: "Account Initialization Failed",
         message: e instanceof Error ? e.message : "Something went wrong",
         icon: <IconX />,
       });
@@ -119,20 +157,47 @@ const StakingAccount = () => {
 
   if (!publicKey) {
     return (
-      <Stack gap="xs" align="center">
-        <Text ta="center" c="dimmed">
-          connect your wallet to see your staked tokens
-        </Text>
-        <ConnectWalletButton size="md" fullWidth />
-      </Stack>
+      <Paper
+        withBorder
+        p={{ base: "lg", sm: "xl" }}
+        radius="lg"
+        shadow="sm"
+        style={{
+          background: "light-dark(#ffffff, #14151a)",
+          borderColor:
+            "light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5))",
+          textAlign: "center",
+        }}
+      >
+        <Stack align="center" gap="md" maw={440} mx="auto">
+          <ThemeIcon size={56} radius="xl" variant="light" color="teal">
+            <IconWallet size={28} />
+          </ThemeIcon>
+          <Box>
+            <Text fz="lg" fw={700}>
+              Connect Wallet to Stake
+            </Text>
+            <Text size="xs" c="dimmed" mt={4}>
+              Connect your Solana wallet to view your portfolio, stake $GFM
+              tokens, and collect protocol fee distributions in $SOL.
+            </Text>
+          </Box>
+          <ConnectWalletButton size="md" radius="md" />
+        </Stack>
+      </Paper>
     );
   }
 
   if (stakingAccountLoading) {
     return (
-      <Center>
-        <Loader color="blue" type="dots" />
-      </Center>
+      <Grid gutter="md">
+        <Grid.Col span={{ base: 12, md: 7 }}>
+          <Skeleton height={280} radius="lg" />
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 5 }}>
+          <Skeleton height={280} radius="lg" />
+        </Grid.Col>
+      </Grid>
     );
   }
 
@@ -147,33 +212,26 @@ const StakingAccount = () => {
 
   return (
     <Box>
-      <Flex direction={{ base: "column", xs: "row" }} gap="lg" align="center">
-        <Box flex={1}>
+      <Grid gutter="md" align="stretch">
+        <Grid.Col span={{ base: 12, md: 7 }}>
           <AccountSummary
             availableBalance={availableBalance}
             stakedBalance={stakedBalance}
             claimedRewards={stakingAccount?.claimedRewards}
+            claimableRewards={totalClaimableRewards}
+            poolSharePercent={poolSharePercent}
             gfmRate={gfmRate}
             solRate={solRate}
           />
-          <Text size="sm" mt="xs" c="dimmed" ta="center">
-            When you stake your tokens, they will remain locked for 7 days,
-            followed by a 7-day unstaking window, aligned with each epoch
-          </Text>
-        </Box>
-        <Divider w="100%" display={{ base: "block", xs: "none" }} />
-        <Divider
-          orientation="vertical"
-          display={{ base: "none", xs: "block" }}
-        />
-        <StakeForm availableBalance={availableBalance} />
-      </Flex>
-      <Divider my="md" />
-      {stakingAccount?.records?.length > 0 && (
-        <>
-          <StakingRecords list={stakingAccount?.records} />
-        </>
-      )}
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 5 }}>
+          <StakeForm availableBalance={availableBalance} />
+        </Grid.Col>
+      </Grid>
+
+      <Divider my="lg" />
+
+      <StakingRecords list={stakingAccount?.records || []} />
     </Box>
   );
 };

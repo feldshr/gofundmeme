@@ -1,32 +1,33 @@
 import {
   Avatar,
+  Badge,
+  Box,
   Button,
-  Card,
-  Divider,
-  Flex,
   Group,
   NumberFormatter,
+  SimpleGrid,
   Text,
-  Title,
+  Tooltip,
 } from "@mantine/core";
 import dayjs from "dayjs";
 import { useMemo } from "react";
 import { useRoot } from "../../../providers/hooks";
 import stakedTokenImage from "../../../assets/sGFM.png";
-import {
-  useStaking,
-  type StakerRecord,
-} from "../context/StakingContext";
+import { useStaking, type StakerRecord } from "../context/StakingContext";
 import { useStakingRecordActions } from "../hooks/useStakingRecordActions";
-import { getUnlockInfo } from "../../../utils";
 import SolanaLogo from "../../img/SolanaLogo";
 import { DATE_FORMAT } from "../../../solana";
+import {
+  calculateRecordClaimableRewards,
+  getRecordUnlockDetails,
+} from "../utils";
+import classes from "./StakingRecords.module.css";
+import { IconClock, IconLock, IconLockOpen } from "@tabler/icons-react";
 
 type Props = {
   record: StakerRecord;
 };
 
-const scalingFactor = 1_000_000_000;
 const StakingRecordsItem = ({ record }: Props) => {
   const { gfmRate, solRate } = useRoot();
   const { stakingInfo } = useStaking();
@@ -34,27 +35,24 @@ const StakingRecordsItem = ({ record }: Props) => {
     useStakingRecordActions(record);
 
   const unlock = useMemo(() => {
-    return getUnlockInfo(record?.stakingTimestamp);
-  }, [record?.stakingTimestamp]);
+    return getRecordUnlockDetails(record.stakingTimestamp);
+  }, [record.stakingTimestamp]);
 
   const available = useMemo(() => {
-    if (!stakingInfo || !record) return 0;
-    return (
-      (record.userStakedTokens *
-        (stakingInfo?.cumulativeRewardsPerToken -
-          record.userCumulativeRewardsPerToken)) /
-      scalingFactor
+    return calculateRecordClaimableRewards(
+      record,
+      stakingInfo?.cumulativeRewardsPerToken,
     );
-  }, [record, stakingInfo]);
+  }, [record, stakingInfo?.cumulativeRewardsPerToken]);
 
   const stakedBalanceUsd = useMemo(() => {
     if (!record?.userStakedTokens || !gfmRate) return;
-    return record?.userStakedTokens * gfmRate;
+    return record.userStakedTokens * gfmRate;
   }, [record?.userStakedTokens, gfmRate]);
 
   const claimedUsd = useMemo(() => {
     if (!record?.claimedRewards || !solRate) return;
-    return record?.claimedRewards * solRate;
+    return record.claimedRewards * solRate;
   }, [record?.claimedRewards, solRate]);
 
   const availableUsd = useMemo(() => {
@@ -62,128 +60,197 @@ const StakingRecordsItem = ({ record }: Props) => {
     return available * solRate;
   }, [available, solRate]);
 
+  const cooldownActive = useMemo(() => {
+    if (!record?.lastClaimedTimestamp) return false;
+    return dayjs().isBefore(
+      dayjs(record.lastClaimedTimestamp).add(1, "minute"),
+    );
+  }, [record?.lastClaimedTimestamp]);
+
   return (
-    <Card shadow="xs" p={{ base: "xs", xs: "sm" }} radius="md" withBorder>
-      <Flex wrap="wrap" align="center" justify="space-around" ta="center">
-        <div style={{ width: "100%" }}>
-          <Text tt="uppercase" size="xs" c="dimmed">
-            Staked
-          </Text>
-          <Group align="center" justify="center" gap={6}>
-            <Avatar
-              variant="transparent"
-              radius={20}
-              size={20}
-              src={stakedTokenImage}
-              display="inline-flex"
-              style={{
-                align: "center",
-                justifyContent: "center",
-              }}
-            />
-            <Title order={2} lh={1}>
-              <NumberFormatter
-                value={record?.userStakedTokens}
-                thousandSeparator
-                decimalScale={6}
+    <Box className={classes.card}>
+      <Box>
+        <Group justify="space-between" align="flex-start">
+          {/* Staked Tokens amount */}
+          <Group gap="sm" align="center">
+            <Tooltip label="Staked GoFundMeme ($sGFM)" position="top">
+              <Avatar
+                src={stakedTokenImage}
+                size={32}
+                radius="xl"
+                style={{
+                  flexShrink: 0,
+                  border:
+                    "1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))",
+                }}
               />
-            </Title>
-          </Group>
-          {!!stakedBalanceUsd && (
-            <>
-              {" "}
-              <Text size="sm" c="dimmed">
-                ~$
-                {stakedBalanceUsd?.toLocaleString("en-US", {
-                  maximumFractionDigits: 2,
-                })}
+            </Tooltip>
+            <Box>
+              <Text fw={700} fz={20} lh={1.1}>
+                <NumberFormatter
+                  value={record.userStakedTokens}
+                  thousandSeparator
+                  decimalScale={4}
+                />{" "}
+                <Text component="span" fz="xs" fw={700} c="dimmed">
+                  $GFM
+                </Text>
               </Text>
-            </>
-          )}
-        </div>
-        <Divider w="100%" my={{ base: "xs", xs: "sm" }} label="rewards" />
-        <div>
-          <Text tt="uppercase" size="xs" c="dimmed">
-            Claimed
-          </Text>
-          <Group align="center" justify="center" gap={4}>
-            <SolanaLogo fontSize="16" color="var(--mantine-color-bright)" />
-            <Text fz={22} fw={600} lh={1}>
-              <NumberFormatter
-                value={record?.claimedRewards}
-                decimalScale={2}
-                thousandSeparator
-              />
-            </Text>
+              {!!stakedBalanceUsd && (
+                <Text size="xs" c="dimmed">
+                  ~$
+                  {stakedBalanceUsd.toLocaleString("en-US", {
+                    maximumFractionDigits: 2,
+                  })}{" "}
+                  USD
+                </Text>
+              )}
+            </Box>
           </Group>
-          {!!claimedUsd && (
-            <>
-              {" "}
-              <Text size="xs" c="dimmed">
-                ~$
-                {claimedUsd?.toLocaleString("en-US", {
-                  maximumFractionDigits: 2,
-                })}
-              </Text>
-            </>
+          {unlock.unlockAvailable ? (
+            <Badge
+              color="teal"
+              variant="light"
+              size="sm"
+              radius="md"
+              leftSection={<IconLockOpen size={12} />}
+            >
+              Unlocked
+            </Badge>
+          ) : (
+            <Badge
+              color="red"
+              variant="light"
+              size="sm"
+              radius="md"
+              leftSection={<IconLock size={12} />}
+            >
+              Locked
+            </Badge>
           )}
-        </div>
-        <div>
-          <Text tt="uppercase" size="xs" c="dimmed">
-            Available
-          </Text>
-          <Group align="center" justify="center" gap={4}>
-            <SolanaLogo fontSize="16" color="var(--mantine-color-bright)" />
-            <Text fz={22} fw={600} lh={1}>
-              <NumberFormatter
-                value={available}
-                decimalScale={6}
-                thousandSeparator
-              />
-            </Text>
-          </Group>
-          {!!availableUsd && (
-            <>
-              {" "}
-              <Text size="xs" c="dimmed">
-                ~$
-                {availableUsd?.toLocaleString("en-US", {
-                  maximumFractionDigits: 2,
-                })}
-              </Text>
-            </>
-          )}
-        </div>
-      </Flex>
-      <Group wrap="nowrap" gap={4} mt="lg">
-        <Button
-          color="red"
-          variant="light"
-          disabled={!unlock?.unlockAvailable || isClaiming}
-          loading={isUnstaking}
-          onClick={unstake}
-          fullWidth
+        </Group>
+
+        {/* Rewards Box */}
+        <Box
+          className={
+            available > 0 ? classes.rewardBoxActive : classes.rewardBox
+          }
+          my="xs"
         >
-          unstake
-        </Button>
-        <Button
-          color="green"
-          disabled={available <= 0 || isUnstaking}
-          loading={isClaiming}
-          onClick={claim}
-          fullWidth
+          <SimpleGrid cols={2} spacing="xs">
+            <div>
+              <Text size="xs" tt="uppercase" fw={600} c="dimmed">
+                Claimable SOL
+              </Text>
+              <Group gap={4} align="center" mt={2}>
+                <SolanaLogo style={{ width: 14, height: 12 }} />
+                <Text
+                  fw={700}
+                  fz="md"
+                  lh={1.2}
+                  c={available > 0 ? "teal" : undefined}
+                >
+                  <NumberFormatter
+                    value={available}
+                    decimalScale={4}
+                    thousandSeparator
+                  />
+                </Text>
+              </Group>
+              {!!availableUsd && (
+                <Text size="xs" c="dimmed">
+                  ~$
+                  {availableUsd.toLocaleString("en-US", {
+                    maximumFractionDigits: 2,
+                  })}
+                </Text>
+              )}
+            </div>
+
+            <div>
+              <Text size="xs" tt="uppercase" fw={600} c="dimmed">
+                Claimed SOL
+              </Text>
+              <Group gap={4} align="center" mt={2}>
+                <SolanaLogo style={{ width: 14, height: 12 }} />
+                <Text fw={600} fz="md" lh={1.2}>
+                  <NumberFormatter
+                    value={record.claimedRewards}
+                    decimalScale={4}
+                    thousandSeparator
+                  />
+                </Text>
+              </Group>
+              {!!claimedUsd && (
+                <Text size="xs" c="dimmed">
+                  ~$
+                  {claimedUsd.toLocaleString("en-US", {
+                    maximumFractionDigits: 2,
+                  })}
+                </Text>
+              )}
+            </div>
+          </SimpleGrid>
+        </Box>
+
+        {/* Timeline details */}
+        <Group gap={4} align="flex-start" mt="xs" wrap="nowrap">
+          <IconClock size={14} style={{ opacity: 0.6 }} />
+          <Text size="xs" c="dimmed">
+            {unlock.unlockAvailable ? "Unstake window closes on" : "Unlocks on"}{" "}
+            {dayjs(unlock.date).format(DATE_FORMAT)}
+          </Text>
+        </Group>
+      </Box>
+
+      {/* Action Buttons */}
+      <Group gap="xs" mt="md" grow>
+        <Tooltip
+          label={
+            !unlock.unlockAvailable
+              ? `Locked until ${dayjs(unlock.date).format(DATE_FORMAT)}`
+              : "Unstake your tokens back to your wallet"
+          }
         >
-          claim
-        </Button>
+          <Button
+            color="red"
+            variant="light"
+            radius="md"
+            size="sm"
+            disabled={!unlock.unlockAvailable || isClaiming}
+            loading={isUnstaking}
+            onClick={unstake}
+            fw={600}
+          >
+            Unstake
+          </Button>
+        </Tooltip>
+
+        <Tooltip
+          label={
+            available <= 0
+              ? "No rewards accumulated yet"
+              : cooldownActive
+                ? "Please wait 1 minute between claims"
+                : "Claim your accumulated SOL rewards"
+          }
+        >
+          <Button
+            color="teal"
+            variant={available > 0 ? "filled" : "light"}
+            radius="md"
+            size="sm"
+            disabled={available <= 0 || isUnstaking || cooldownActive}
+            loading={isClaiming}
+            onClick={claim}
+            leftSection={<SolanaLogo fontSize="13px" />}
+            fw={600}
+          >
+            Claim SOL
+          </Button>
+        </Tooltip>
       </Group>
-      <Text c="dimmed" size="xs" lh={1} mt={4}>
-        {unlock?.unlockAvailable
-          ? "Unstake available until"
-          : "Unstake will be available after"}{" "}
-        {dayjs(unlock?.date).format(DATE_FORMAT)}
-        {unlock?.unlockAvailable ? "" : " for 7 days"}
-      </Text>
-    </Card>
+    </Box>
   );
 };
 

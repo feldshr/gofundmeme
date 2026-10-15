@@ -1,0 +1,52 @@
+.card {
+  background: light-dark(#ffffff, #14151a);
+  border: 1px solid
+    light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+  border-radius: var(--mantine-radius-md);
+  padding: var(--mantine-spacing-md);
+  box-shadow: light-dark(
+    0 2px 10px rgba(0, 0, 0, 0.03),
+    0 2px 16px rgba(0, 0, 0, 0.25)
+  );
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card:hover {
+  border-color: light-dark(
+    var(--mantine-color-gray-4),
+    var(--mantine-color-dark-4)
+  );
+}
+
+.rewardBox {
+  background: light-dark(
+    var(--mantine-color-gray-0),
+    var(--mantine-color-dark-6)
+  );
+  border: 1px solid
+    light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+  border-radius: var(--mantine-radius-md);
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+}
+
+.rewardBoxActive {
+  background: light-dark(rgba(16, 185, 129, 0.06), rgba(16, 185, 129, 0.08));
+  border: 1px solid
+    light-dark(rgba(16, 185, 129, 0.25), rgba(16, 185, 129, 0.3));
+  border-radius: var(--mantine-radius-md);
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+}
+
+.emptyCard {
+  background: light-dark(#ffffff, #14151a);
+  border: 1px dashed
+    light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-lg);
+  padding: var(--mantine-spacing-xl);
+  text-align: center;
+}

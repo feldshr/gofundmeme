@@ -1,4 +1,4 @@
-import { Space } from "@mantine/core";
+import { Stack } from "@mantine/core";
 import { StakingProvider } from "./context/StakingProvider";
 import StakingStats from "./StakingStats/StakingStats";
 import StakingAccount from "./StakingAccount/StakingAccount";
@@ -6,9 +6,10 @@ import StakingAccount from "./StakingAccount/StakingAccount";
 const Staking = () => {
   return (
     <StakingProvider>
-      <StakingStats />
-      <Space h="md" />
-      <StakingAccount />
+      <Stack gap="lg">
+        <StakingStats />
+        <StakingAccount />
+      </Stack>
     </StakingProvider>
   );
 };
