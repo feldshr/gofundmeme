@@ -1,7 +1,4 @@
-header .wallet-adapter-button,
-header .wallet-adapter-dropdown-list,
-.wallet-adapter-modal-wrapper,
-.wallet-adapter-button {
+.wallet-adapter-modal-wrapper {
   font-family: Fredoka, serif !important;
 }
 

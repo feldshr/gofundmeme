@@ -8,7 +8,7 @@ import {
 import classes from "./Header.module.css";
 import { Link, useLocation } from "@tanstack/react-router";
 import ProfileMenu from "./ProfileMenu/ProfileMenu";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import ConnectWalletButton from "../../ConnectWalletButton";
 import { useWallet } from "@solana/wallet-adapter-react";
 import RootSettings from "./RootSettings";
 import Logo from "../../img/Logo";
@@ -54,20 +54,15 @@ const Header = () => {
             {publicKey ? (
               <ProfileMenu />
             ) : (
-              <WalletMultiButton
+              <ConnectWalletButton
+                variant="light"
+                radius={12}
+                color="gray"
                 style={{
-                  backgroundColor: "var(--mantine-color-gray-light)",
-                  color: "light-dark(#000, #fff)",
-                  padding:
-                    "var(--mantine-spacing-xs) var(--mantine-spacing-sm)",
-                  height: 42,
-                  lineHeight: 1,
-                  fontWeight: 600,
-                  borderTopLeftRadius: 12,
-                  borderBottomLeftRadius: 12,
                   borderTopRightRadius: 0,
                   borderBottomRightRadius: 0,
                 }}
+                h={42}
               />
             )}
             <Divider />

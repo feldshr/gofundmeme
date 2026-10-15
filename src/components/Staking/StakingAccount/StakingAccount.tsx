@@ -16,7 +16,7 @@ import StakingRecords from "../StakingRecords/StakingRecords";
 import StakeForm from "../StakeForm/StakeForm";
 import { useCallback, useTransition } from "react";
 import { showTransactionState } from "../../../utils/transactionNotifications";
-import MantineWalletMultiButton from "../../MantineWalletMultiButton";
+import ConnectWalletButton from "../../ConnectWalletButton";
 import CreateAccountPanel from "./CreateAccountPanel";
 import AccountSummary from "./AccountSummary";
 
@@ -123,7 +123,7 @@ const StakingAccount = () => {
         <Text ta="center" c="dimmed">
           connect your wallet to see your staked tokens
         </Text>
-        <MantineWalletMultiButton size="md" fullWidth />
+        <ConnectWalletButton size="md" fullWidth />
       </Stack>
     );
   }
