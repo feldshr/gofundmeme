@@ -45,3 +45,37 @@ html[data-mantine-color-scheme="dark"] body {
   overflow: hidden;
   background-color: light-dark(#fff, #0e0e11);
 }
+
+.main {
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: 1fr;
+  flex: 1;
+  position: relative;
+  width: 100%;
+}
+
+.main > * {
+  width: 100%;
+  height: 100%;
+}
+
+.skip-to-content {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  background-color: #228be6;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  z-index: 10000;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  transition: top 0.2s ease-in-out;
+}
+
+.skip-to-content:focus {
+  top: 16px;
+}
+

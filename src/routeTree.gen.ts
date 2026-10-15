@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
+import { Route as LayoutSplatRouteImport } from './routes/_layout/$'
 
 const LayoutRoute = LayoutRouteImport.update({
   id: '/_layout',
@@ -20,25 +21,33 @@ const LayoutIndexRoute = LayoutIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => LayoutRoute,
+} as any).lazy(() => import('./routes/_layout/index.lazy').then((d) => d.Route))
+const LayoutSplatRoute = LayoutSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => LayoutRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/$': typeof LayoutSplatRoute
   '/': typeof LayoutIndexRoute
 }
 export interface FileRoutesByTo {
+  '/$': typeof LayoutSplatRoute
   '/': typeof LayoutIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_layout': typeof LayoutRouteWithChildren
+  '/_layout/$': typeof LayoutSplatRoute
   '/_layout/': typeof LayoutIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/$' | '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/_layout' | '/_layout/'
+  to: '/$' | '/'
+  id: '__root__' | '/_layout' | '/_layout/$' | '/_layout/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -61,14 +70,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/$': {
+      id: '/_layout/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof LayoutSplatRouteImport
+      parentRoute: typeof LayoutRoute
+    }
   }
 }
 
 interface LayoutRouteChildren {
+  LayoutSplatRoute: typeof LayoutSplatRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
+  LayoutSplatRoute: LayoutSplatRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }
 
