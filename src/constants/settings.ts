@@ -1,7 +1,6 @@
 export type RpcType = "public" | "custom";
 
-export const PUBLIC_RPC_URL = "https://solana.publicnode.com";
-export const RPC_ENDPOINT_URL = PUBLIC_RPC_URL;
+export { PUBLIC_RPC_URL, RPC_ENDPOINT_URL } from "../solana/constants";
 
 export const RPC_SELECT_DATA = [
   {

@@ -3,12 +3,16 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { IconPhotoOff, IconX } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAnchorProvider, useRoot } from "../../../providers/hooks";
-import { useStaking } from "../context/StakingContext";
 import { isInRange, useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import useStake from "../hooks/useStake";
 import tokenImage from "../../../assets/GFM.png";
-import { showTransactionState } from "../../../solana/utils";
+import { showTransactionState } from "../../../utils/transactionNotifications";
+import {
+  GFM_PUBLIC_KEY,
+  sGFM_PUBLIC_KEY,
+  GFM_DECIMALS,
+} from "../../../solana";
 
 type FormType = {
   amount: number | string;
@@ -23,7 +27,6 @@ const StakeFormModal = ({
   const queryClient = useQueryClient();
   const { publicKey } = useWallet();
   const { anchorProvider } = useAnchorProvider();
-  const { stakingInfo } = useStaking();
   const { mutateAsync: stake, isPending: stakePending } = useStake();
   const form = useForm<FormType>({
     initialValues: {
@@ -51,14 +54,20 @@ const StakeFormModal = ({
 
   const handleSubmit = async (values: FormType) => {
     if (
-      !stakingInfo ||
       !publicKey ||
       !anchorProvider ||
       typeof values.amount !== "number"
-    )
+    ) {
       return;
+    }
+
     try {
-      const signature = await stake(values.amount);
+      const signature = await stake({
+        amount: values.amount,
+        decimals: GFM_DECIMALS,
+        gfmMintAddress: GFM_PUBLIC_KEY,
+        sgfmMintAddress: sGFM_PUBLIC_KEY,
+      });
       await showTransactionState(signature, explorer);
       queryClient.invalidateQueries({
         queryKey: ["staking-account", publicKey?.toString()],

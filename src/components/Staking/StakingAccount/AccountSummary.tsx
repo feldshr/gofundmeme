@@ -5,8 +5,6 @@ import stakedTokenImage from "../../../assets/sGFM.png";
 import { IconPhotoOff } from "@tabler/icons-react";
 import SolanaLogo from "../../img/SolanaLogo";
 
-const CLAIMED_REWARDS_DIVISOR = 1000;
-
 type AccountSummaryProps = {
   availableBalance?: number;
   stakedBalance?: number;
@@ -34,7 +32,7 @@ const AccountSummary = ({
 
   const claimedUsd = useMemo(() => {
     if (!claimedRewards || !solRate) return;
-    return (claimedRewards / CLAIMED_REWARDS_DIVISOR) * solRate;
+    return claimedRewards * solRate;
   }, [claimedRewards, solRate]);
 
   return (
@@ -135,11 +133,11 @@ const AccountSummary = ({
               marginRight: rem(6),
             }}
           />
-          {(claimedRewards || 0 / CLAIMED_REWARDS_DIVISOR)?.toLocaleString(
+          {(claimedRewards || 0)?.toLocaleString(
             "en-US",
             {
               maximumFractionDigits: 2,
-            }
+            },
           )}
         </Text>
         {!!claimedUsd && (

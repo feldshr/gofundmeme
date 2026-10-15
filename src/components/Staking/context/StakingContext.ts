@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 import type {
   getStakerStakeAccounts,
   getStaking,
-} from "../../../solana/staking/states";
+} from "../../../solana/staking";
 
 export type StakerStakeAccounts = NonNullable<
   Awaited<ReturnType<typeof getStakerStakeAccounts>>

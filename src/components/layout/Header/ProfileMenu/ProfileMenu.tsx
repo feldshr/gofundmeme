@@ -1,7 +1,13 @@
 import { Group, Menu, Text, Divider, CopyButton, Button } from "@mantine/core";
-import { IconCheck, IconCopy, IconLogout } from "@tabler/icons-react";
+import {
+  IconCheck,
+  IconCopy,
+  IconLogout,
+  IconSwitchHorizontal,
+} from "@tabler/icons-react";
 import SolanaLogo from "../../../img/SolanaLogo";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import classes from "./ProfileMenu.module.css";
 import useSolanaWalletBalance from "../../../../hooks/queries/useSolanaWalletBalance";
 import { walletAddressToShorten } from "../../../../utils";
@@ -9,6 +15,7 @@ import { walletAddressToShorten } from "../../../../utils";
 const ProfileMenu = () => {
   const { solBalance } = useSolanaWalletBalance();
   const { publicKey, disconnect } = useWallet();
+  const { setVisible } = useWalletModal();
 
   const handleDisconnect = () => {
     disconnect();
@@ -97,7 +104,7 @@ const ProfileMenu = () => {
                   disabled={copied}
                   onClick={copy}
                 >
-                  <Text c={publicKey ? "dimmed" : undefined} fz="inherit">
+                  <Text c="dimmed" fz="inherit">
                     {copied ? "Copied" : "Copy address"}
                   </Text>
                 </Menu.Item>
@@ -105,10 +112,19 @@ const ProfileMenu = () => {
             </CopyButton>
           )}
           <Menu.Item
+            leftSection={<IconSwitchHorizontal size="1.1rem" stroke={1.5} />}
+            onClick={() => setVisible(true)}
+          >
+            <Text c="dimmed" fz="inherit">
+              Change wallet
+            </Text>
+          </Menu.Item>
+          <Menu.Item
+            color="red"
             leftSection={<IconLogout size={18} stroke={1.5} />}
             onClick={handleDisconnect}
           >
-            <Text c={publicKey ? "dimmed" : undefined} fz="inherit">
+            <Text c="red" fz="inherit">
               Disconnect
             </Text>
           </Menu.Item>

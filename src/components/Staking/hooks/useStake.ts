@@ -1,9 +1,17 @@
 import { useMutation } from "@tanstack/react-query";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Transaction } from "@solana/web3.js";
+import type { PublicKey } from "@solana/web3.js";
 import { useAnchorProvider, useRoot } from "../../../providers/hooks";
-import { createPriorityFeeInstruction } from "../../../solana/utils";
-import { stake } from "../../../solana/staking/actions";
+import { sendTransaction } from "../../../solana/utils";
+import { getStakeInstruction } from "../../../solana/staking";
+
+export interface StakeParams {
+  amount: number;
+  decimals?: number;
+  gfmMintAddress?: PublicKey;
+  sgfmMintAddress?: PublicKey;
+  currentRecord?: number;
+}
 
 export default function useStake() {
   const { signTransaction, publicKey } = useWallet();
@@ -11,7 +19,7 @@ export default function useStake() {
   const { anchorProvider } = useAnchorProvider();
 
   return useMutation({
-    mutationFn: async (amount: number) => {
+    mutationFn: async (params: number | StakeParams) => {
       if (!anchorProvider) {
         throw new Error("Anchor provider not found");
       }
@@ -19,35 +27,32 @@ export default function useStake() {
         throw new Error("Wallet not connected");
       }
 
-      const instruction = await stake({
+      const amount = typeof params === "number" ? params : params.amount;
+      const decimals = typeof params === "object" ? params.decimals : undefined;
+      const gfmMintAddress =
+        typeof params === "object" ? params.gfmMintAddress : undefined;
+      const sgfmMintAddress =
+        typeof params === "object" ? params.sgfmMintAddress : undefined;
+      const currentRecord =
+        typeof params === "object" ? params.currentRecord : undefined;
+
+      const instruction = await getStakeInstruction({
         provider: anchorProvider,
         staker: publicKey,
         amount,
+        decimals,
+        gfmMintAddress,
+        sgfmMintAddress,
+        currentRecord,
       });
-      if (!instruction) {
-        throw new Error("Failed to create stake instruction");
-      }
-      // Priority fee
-      const priorityInstructions = createPriorityFeeInstruction(priorityFee);
 
-      // Create and send transaction
-      const transaction = new Transaction()
-        .add(instruction)
-        .add(...priorityInstructions);
-      transaction.feePayer = publicKey;
-      transaction.recentBlockhash = (
-        await anchorProvider.connection.getLatestBlockhash("finalized")
-      ).blockhash;
-
-      // Sign the transaction
-      const signedTransaction = await signTransaction(transaction);
-
-      // Send the transaction
-      const signature = await anchorProvider.connection.sendRawTransaction(
-        signedTransaction.serialize()
-      );
-      await anchorProvider.connection.getSignatureStatuses([signature]);
-      return signature;
+      return sendTransaction({
+        connection: anchorProvider.connection,
+        payer: publicKey,
+        instructions: instruction,
+        signTransaction,
+        priorityFee,
+      });
     },
   });
 }

@@ -8,12 +8,13 @@ import { notifications } from "@mantine/notifications";
 import { IconX } from "@tabler/icons-react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import dayjs from "dayjs";
-import { getStaking } from "../../../solana/staking/states";
+import { GFM_PUBLIC_KEY, sGFM_PUBLIC_KEY } from "../../../solana/constants";
+import { getStaking } from "../../../solana/staking";
 import { useAnchorProvider, useRoot } from "../../../providers/hooks";
 import useSyncNetwork from "../hooks/useSyncNetwork";
 import useClaim from "../hooks/useClaim";
 import useUnstake from "../hooks/useUnstake";
-import { showTransactionState } from "../../../solana/utils";
+import { showTransactionState } from "../../../utils/transactionNotifications";
 import {
   StakingContext,
   type StakerRecord,
@@ -71,11 +72,11 @@ export const StakingProvider = ({ children }: PropsWithChildren) => {
   }, [queryClient, publicKey]);
 
   const handleSync = useCallback(async () => {
-    if (!stakingInfo) return;
     try {
       const signature = await syncNetwork({
         stakingNetwork: stakingInfo?.stakingNetwork,
         stakingNetworkSyncAccount: stakingInfo?.stakingNetworkSyncAccount,
+        gfmMintAddress: stakingInfo?.gfmToken?.address ?? GFM_PUBLIC_KEY,
       });
       await showTransactionState(signature, explorer);
       refreshAllData();
@@ -93,7 +94,7 @@ export const StakingProvider = ({ children }: PropsWithChildren) => {
 
   const handleClaim = useCallback(
     async (record: StakerRecord) => {
-      if (!record || !stakingInfo) return;
+      if (!record) return;
       try {
         if (
           dayjs().isBefore(dayjs(record?.lastClaimedTimestamp).add(1, "minutes"))
@@ -102,7 +103,7 @@ export const StakingProvider = ({ children }: PropsWithChildren) => {
         }
         const signature = await claim({
           record: record?.record,
-          gfmMintAddress: stakingInfo?.gfmToken?.address,
+          gfmMintAddress: stakingInfo?.gfmToken?.address ?? GFM_PUBLIC_KEY,
         });
         await showTransactionState(signature, explorer);
         refreshAllData();
@@ -122,12 +123,12 @@ export const StakingProvider = ({ children }: PropsWithChildren) => {
 
   const handleUnstake = useCallback(
     async (record: StakerRecord) => {
-      if (!record || !stakingInfo) return;
+      if (!record) return;
       try {
         const signature = await unstake({
           record: record?.record,
-          sgfmMintAddress: stakingInfo?.sgfmMintAddress,
-          gfmMintAddress: stakingInfo?.gfmToken?.address,
+          sgfmMintAddress: stakingInfo?.sgfmMintAddress ?? sGFM_PUBLIC_KEY,
+          gfmMintAddress: stakingInfo?.gfmToken?.address ?? GFM_PUBLIC_KEY,
         });
         await showTransactionState(signature, explorer);
         refreshAllData();

@@ -1,9 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Transaction } from "@solana/web3.js";
 import { useAnchorProvider, useRoot } from "../../../providers/hooks";
-import { createPriorityFeeInstruction } from "../../../solana/utils";
-import { createStakerAccount } from "../../../solana/staking/actions";
+import { sendTransaction } from "../../../solana/utils";
+import { getCreateStakerAccountInstruction } from "../../../solana/staking";
 
 export default function useCreateAccount() {
   const { signTransaction, publicKey } = useWallet();
@@ -19,34 +18,18 @@ export default function useCreateAccount() {
         throw new Error("Wallet not connected");
       }
 
-      const instruction = await createStakerAccount({
+      const instruction = await getCreateStakerAccountInstruction({
         provider: anchorProvider,
         staker: publicKey,
       });
-      if (!instruction) {
-        throw new Error("Failed to create sync instruction");
-      }
-      // Priority fee
-      const priorityInstructions = createPriorityFeeInstruction(priorityFee);
 
-      // Create and send transaction
-      const transaction = new Transaction()
-        .add(instruction)
-        .add(...priorityInstructions);
-      transaction.feePayer = publicKey;
-      transaction.recentBlockhash = (
-        await anchorProvider.connection.getLatestBlockhash("finalized")
-      ).blockhash;
-
-      // Sign the transaction
-      const signedTransaction = await signTransaction(transaction);
-
-      // Send the transaction
-      const signature = await anchorProvider.connection.sendRawTransaction(
-        signedTransaction.serialize()
-      );
-      await anchorProvider.connection.getSignatureStatuses([signature]);
-      return signature;
+      return sendTransaction({
+        connection: anchorProvider.connection,
+        payer: publicKey,
+        instructions: instruction,
+        signTransaction,
+        priorityFee,
+      });
     },
   });
 }

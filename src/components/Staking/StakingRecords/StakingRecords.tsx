@@ -1,5 +1,5 @@
 import { Grid } from "@mantine/core";
-import { getStakerStakeAccounts } from "../../../solana/staking/states";
+import { getStakerStakeAccounts } from "../../../solana/staking";
 import dayjs from "dayjs";
 import StakingRecordsItem from "./StakingRecordsItem";
 import { useMemo } from "react";

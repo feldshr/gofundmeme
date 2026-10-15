@@ -5,7 +5,7 @@ import {
   useConnection,
   useWallet,
 } from "@solana/wallet-adapter-react";
-import { COMMITMENT } from "../constants";
+import { COMMITMENT } from "../solana";
 import { AnchorContext } from "./AnchorContext";
 
 export const AnchorProvider = ({ children }: PropsWithChildren) => {

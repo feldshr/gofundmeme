@@ -20,7 +20,7 @@ import {
 import { useStakingRecordActions } from "../hooks/useStakingRecordActions";
 import { getUnlockInfo } from "../../../utils";
 import SolanaLogo from "../../img/SolanaLogo";
-import { DATE_FORMAT } from "../../../constants";
+import { DATE_FORMAT } from "../../../solana";
 
 type Props = {
   record: StakerRecord;

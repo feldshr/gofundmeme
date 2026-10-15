@@ -1,9 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { PublicKey, Transaction } from "@solana/web3.js";
+import type { PublicKey } from "@solana/web3.js";
 import { useAnchorProvider, useRoot } from "../../../providers/hooks";
-import { createPriorityFeeInstruction } from "../../../solana/utils";
-import { getsSyncStakingNetworkInstruction } from "../../../solana/staking/actions";
+import { sendTransaction } from "../../../solana/utils";
+import { getSyncStakingNetworkInstruction } from "../../../solana/staking";
 
 export default function useSyncNetwork() {
   const { signTransaction, publicKey } = useWallet();
@@ -11,9 +11,10 @@ export default function useSyncNetwork() {
   const { anchorProvider } = useAnchorProvider();
 
   return useMutation({
-    mutationFn: async (payload: {
-      stakingNetwork: PublicKey;
-      stakingNetworkSyncAccount: PublicKey;
+    mutationFn: async (payload?: {
+      stakingNetwork?: PublicKey;
+      stakingNetworkSyncAccount?: PublicKey;
+      gfmMintAddress?: PublicKey;
     }) => {
       if (!anchorProvider) {
         throw new Error("Anchor provider not found");
@@ -22,36 +23,21 @@ export default function useSyncNetwork() {
         throw new Error("Wallet not connected");
       }
 
-      const instruction = await getsSyncStakingNetworkInstruction({
+      const instruction = await getSyncStakingNetworkInstruction({
         provider: anchorProvider,
         auth: publicKey,
-        stakingNetwork: payload.stakingNetwork,
-        stakingNetworkSyncAccount: payload.stakingNetworkSyncAccount,
+        stakingNetwork: payload?.stakingNetwork,
+        stakingNetworkSyncAccount: payload?.stakingNetworkSyncAccount,
+        gfmMintAddress: payload?.gfmMintAddress,
       });
-      if (!instruction) {
-        throw new Error("Failed to create sync instruction");
-      }
-      // Priority fee
-      const priorityInstructions = createPriorityFeeInstruction(priorityFee);
 
-      // Create and send transaction
-      const transaction = new Transaction()
-        .add(instruction)
-        .add(...priorityInstructions);
-      transaction.feePayer = publicKey;
-      transaction.recentBlockhash = (
-        await anchorProvider.connection.getLatestBlockhash("finalized")
-      ).blockhash;
-
-      // Sign the transaction
-      const signedTransaction = await signTransaction(transaction);
-
-      // Send the transaction
-      const signature = await anchorProvider.connection.sendRawTransaction(
-        signedTransaction.serialize()
-      );
-      await anchorProvider.connection.getSignatureStatuses([signature]);
-      return signature;
+      return sendTransaction({
+        connection: anchorProvider.connection,
+        payer: publicKey,
+        instructions: instruction,
+        signTransaction,
+        priorityFee,
+      });
     },
   });
 }

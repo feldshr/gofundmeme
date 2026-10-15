@@ -2,18 +2,20 @@ import { Box, Center, Divider, Flex, Loader, Stack, Text } from "@mantine/core";
 import { IconX } from "@tabler/icons-react";
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAnchorProvider, useRoot } from "../../../providers/hooks";
-import { useStaking } from "../context/StakingContext";
 import { useWallet } from "@solana/wallet-adapter-react";
 import {
-  getAccountBalance,
   getStakerStakeAccounts,
-} from "../../../solana/staking/states";
+  getBalance,
+  GFM_PUBLIC_KEY,
+  sGFM_PUBLIC_KEY,
+  GFM_DECIMALS,
+} from "../../../solana";
 import useCreateAccount from "../hooks/useCreateAccount";
 import { notifications } from "@mantine/notifications";
 import StakingRecords from "../StakingRecords/StakingRecords";
 import StakeForm from "../StakeForm/StakeForm";
 import { useCallback, useTransition } from "react";
-import { showTransactionState } from "../../../solana/utils";
+import { showTransactionState } from "../../../utils/transactionNotifications";
 import MantineWalletMultiButton from "../../MantineWalletMultiButton";
 import CreateAccountPanel from "./CreateAccountPanel";
 import AccountSummary from "./AccountSummary";
@@ -24,23 +26,22 @@ const StakingAccount = () => {
   const queryClient = useQueryClient();
   const { publicKey } = useWallet();
   const { anchorProvider } = useAnchorProvider();
-  const { stakingInfo } = useStaking();
   const { mutateAsync: createAccount, isPending: createAccountLoading } =
     useCreateAccount();
   const { isPending: stakingAccountLoading, data: stakingAccount } = useQuery(
     queryOptions({
       queryKey: ["staking-account", publicKey?.toString()],
       queryFn: () => {
-        if (!anchorProvider || !publicKey || !stakingInfo) return;
+        if (!anchorProvider || !publicKey) return;
         return getStakerStakeAccounts({
           provider: anchorProvider,
-          gfmMintAddress: stakingInfo?.gfmToken?.address,
           staker: publicKey,
-          decimals: stakingInfo?.gfmToken?.decimals,
+          gfmMintAddress: GFM_PUBLIC_KEY,
+          decimals: GFM_DECIMALS,
         });
       },
       staleTime: 5 * 60 * 1000,
-      enabled: !!anchorProvider && !!publicKey && !!stakingInfo,
+      enabled: !!anchorProvider && !!publicKey,
     }),
   );
 
@@ -48,15 +49,16 @@ const StakingAccount = () => {
     queryOptions({
       queryKey: ["available-staking-balance", publicKey?.toString()],
       queryFn: () => {
-        if (!anchorProvider || !publicKey || !stakingInfo) return;
-        return getAccountBalance({
+        if (!anchorProvider || !publicKey) return;
+        return getBalance({
           connection: anchorProvider.connection,
-          mintAddress: stakingInfo?.gfmToken?.address,
+          mintAddress: GFM_PUBLIC_KEY,
           walletAddress: publicKey,
+          decimals: GFM_DECIMALS,
         });
       },
       staleTime: 5 * 60 * 1000,
-      enabled: !!anchorProvider && !!publicKey && !!stakingInfo,
+      enabled: !!anchorProvider && !!publicKey,
     }),
   );
 
@@ -64,20 +66,20 @@ const StakingAccount = () => {
     queryOptions({
       queryKey: ["staked-balance", publicKey?.toString()],
       queryFn: () => {
-        if (!anchorProvider || !publicKey || !stakingInfo) return;
-        return getAccountBalance({
+        if (!anchorProvider || !publicKey) return;
+        return getBalance({
           connection: anchorProvider.connection,
-          mintAddress: stakingInfo?.sgfmMintAddress,
+          mintAddress: sGFM_PUBLIC_KEY,
           walletAddress: publicKey,
+          decimals: GFM_DECIMALS,
         });
       },
       staleTime: 5 * 60 * 1000,
-      enabled: !!anchorProvider && !!publicKey && !!stakingInfo,
+      enabled: !!anchorProvider && !!publicKey,
     }),
   );
 
   const handleCreateAccount = useCallback(async () => {
-    if (!stakingInfo) return;
     try {
       const signature = await createAccount();
       await showTransactionState(signature, explorer);
@@ -113,7 +115,7 @@ const StakingAccount = () => {
       });
       console.error(e);
     }
-  }, [stakingInfo, createAccount, explorer, queryClient, publicKey]);
+  }, [createAccount, explorer, queryClient, publicKey]);
 
   if (!publicKey) {
     return (

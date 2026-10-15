@@ -3,6 +3,11 @@ import { PublicKey } from "@solana/web3.js";
 
 export const NETWORK = WalletAdapterNetwork.Mainnet;
 export const COMMITMENT = "confirmed";
+export const PUBLIC_RPC_URL = "https://solana.publicnode.com";
+export const RPC_ENDPOINT_URL = PUBLIC_RPC_URL;
+
+export const GFM_DECIMALS = 6;
+export const SOL_DECIMALS = 9;
 
 export const GFM_Program = new PublicKey(
   "GFMioXjhuDWMEBtuaoaDPJFPEnL2yDHCWKoVPhj1MeA7",
@@ -16,6 +21,10 @@ export const GFM_PUBLIC_KEY = new PublicKey(
   "E1jCTXdkMRoawoWoqfbhiNkkLbxcSHPssMo36U84pump",
 );
 
+export const sGFM_PUBLIC_KEY = new PublicKey(
+  "Dt32DgsaEubUixqSZCHCPY7Mp2XwAys9vcEDRkFmXXJz",
+);
+
 export const SOL_PUBLIC_KEY = new PublicKey(
   "So11111111111111111111111111111111111111112",
 );
@@ -25,3 +34,4 @@ export const VAULTS = {
   GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL: "Raydium Pool",
   FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM: "Bonding Curve",
 } as const;
+

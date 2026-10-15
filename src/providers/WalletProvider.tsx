@@ -4,35 +4,26 @@ import {
   ConnectionProvider,
   WalletProvider as SolanaWalletProvider,
 } from "@solana/wallet-adapter-react";
-import {
-  LedgerWalletAdapter,
-  CoinbaseWalletAdapter,
-  SolflareWalletAdapter,
-  TorusWalletAdapter,
-  PhantomWalletAdapter,
-} from "@solana/wallet-adapter-wallets";
+import { LedgerWalletAdapter } from "@solana/wallet-adapter-wallets";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import { NETWORK } from "../constants";
 import { useRoot } from "./hooks";
+import { WalletNotificationWatcher } from "./WalletNotificationWatcher";
 
 export const WalletProvider = ({ children }: PropsWithChildren) => {
   const { activeRpc } = useRoot();
 
-  const wallets = useMemo(
-    () => [
-      new PhantomWalletAdapter(),
-      new CoinbaseWalletAdapter(),
-      new SolflareWalletAdapter({ network: NETWORK }),
-      new LedgerWalletAdapter(),
-      new TorusWalletAdapter(),
-    ],
-    [],
-  );
+  // All modern wallets (Phantom, Solflare, Coinbase, Backpack, etc.) implement
+  // the Solana Wallet Standard and are registered automatically.
+  // We only provide legacy hardware adapters (like Ledger) here.
+  const wallets = useMemo(() => [new LedgerWalletAdapter()], []);
 
   return (
     <ConnectionProvider endpoint={activeRpc}>
       <SolanaWalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>{children}</WalletModalProvider>
+        <WalletModalProvider>
+          <WalletNotificationWatcher />
+          {children}
+        </WalletModalProvider>
       </SolanaWalletProvider>
     </ConnectionProvider>
   );

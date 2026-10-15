@@ -1,10 +1,10 @@
-import { AnchorProvider } from "@coral-xyz/anchor";
+import { type AnchorProvider } from "@coral-xyz/anchor";
 import {
-  PublicKey,
+  type PublicKey,
   SystemProgram,
   SYSVAR_CLOCK_PUBKEY,
   SYSVAR_RENT_PUBKEY,
-  TransactionInstruction,
+  type TransactionInstruction,
 } from "@solana/web3.js";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -12,51 +12,66 @@ import {
   getAssociatedTokenAddressSync,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { GFM_PUBLIC_KEY, GFM_Treasury, SOL_PUBLIC_KEY } from "../../constants";
+import BN from "bn.js";
+import Decimal from "decimal.js";
 import {
-  getCCProgram,
+  GFM_DECIMALS,
+  GFM_PUBLIC_KEY,
+  GFM_Treasury,
+  sGFM_PUBLIC_KEY,
+  SOL_PUBLIC_KEY,
+} from "../constants";
+import { getGfmProgram } from "../program";
+import {
   getProgramStakingNetworkPDA,
   getProgramStakingNetworkTreasuryPDA,
+  getProgramStakingNetworkTreasurySyncPDA,
   getProgramStakingNetworkUserAccount,
   getProgramStakingNetworkUserAccountManager,
   getProgramStakingNetworkUserRecord,
-} from "../gfm/utils";
-import BN from "bn.js";
+} from "./pda";
 
-export const getsSyncStakingNetworkInstruction = async ({
+export const getSyncStakingNetworkInstruction = async ({
   provider,
   auth,
   stakingNetwork,
   stakingNetworkSyncAccount,
+  gfmMintAddress = GFM_PUBLIC_KEY,
 }: {
   provider: AnchorProvider;
   auth: PublicKey;
-  stakingNetwork: PublicKey;
-  stakingNetworkSyncAccount: PublicKey;
-}) => {
-  const program = getCCProgram(provider);
-
-  const { gfmMintAddress } =
-    await program.account.gfmStakingNetwork.fetch(stakingNetwork);
+  stakingNetwork?: PublicKey;
+  stakingNetworkSyncAccount?: PublicKey;
+  gfmMintAddress?: PublicKey;
+}): Promise<TransactionInstruction> => {
+  const program = getGfmProgram(provider);
+  const resolvedStakingNetwork =
+    stakingNetwork ?? getProgramStakingNetworkPDA(program.programId);
+  const resolvedSyncAccount =
+    stakingNetworkSyncAccount ??
+    getProgramStakingNetworkTreasurySyncPDA(
+      gfmMintAddress,
+      program.programId,
+    );
 
   const stakingNetworkWsolAccount = getAssociatedTokenAddressSync(
     SOL_PUBLIC_KEY,
-    stakingNetwork,
-    true
+    resolvedStakingNetwork,
+    true,
   );
   const stakingTreasuryAccount = getProgramStakingNetworkTreasuryPDA(
+    gfmMintAddress,
     program.programId,
-    gfmMintAddress
   );
 
   return await program.methods
     .syncStakingNetwork()
     .accounts({
       creator: auth,
-      stakingNetwork,
+      stakingNetwork: resolvedStakingNetwork,
       stakingTreasuryAccount,
       stakingNetworkWsolAccount,
-      stakingNetworkSyncAccount,
+      stakingNetworkSyncAccount: resolvedSyncAccount,
 
       solAddress: SOL_PUBLIC_KEY,
       gfmFoundationAccount: GFM_Treasury,
@@ -72,35 +87,38 @@ export const getsSyncStakingNetworkInstruction = async ({
     .instruction();
 };
 
-export const createStakerAccount = async ({
+export const getCreateStakerAccountInstruction = async ({
   provider,
   staker,
+  gfmMintAddress = GFM_PUBLIC_KEY,
+  sgfmMintAddress = sGFM_PUBLIC_KEY,
 }: {
   provider: AnchorProvider;
   staker: PublicKey;
-}) => {
-  const program = getCCProgram(provider);
+  gfmMintAddress?: PublicKey;
+  sgfmMintAddress?: PublicKey;
+}): Promise<TransactionInstruction> => {
+  const program = getGfmProgram(provider);
   const stakingNetwork = getProgramStakingNetworkPDA(program.programId);
-  const { gfmMintAddress } =
+
+  const { stakersCount } =
     await program.account.gfmStakingNetwork.fetch(stakingNetwork);
 
   const stakerAccountManager = getProgramStakingNetworkUserAccountManager(
-    program.programId,
     gfmMintAddress,
-    staker
+    staker,
+    program.programId,
   );
-  const { sgfmMintAddress, stakersCount } =
-    await program.account.gfmStakingNetwork.fetch(stakingNetwork);
 
   const stakerSgfmTokenAccount = getAssociatedTokenAddressSync(
     sgfmMintAddress,
-    staker
+    staker,
   );
   const stakerRecord = getProgramStakingNetworkUserRecord(
-    program.programId,
     gfmMintAddress,
     stakingNetwork,
-    stakersCount.toNumber()
+    stakersCount.toNumber(),
+    program.programId,
   );
 
   return await program.methods
@@ -121,58 +139,82 @@ export const createStakerAccount = async ({
     .instruction();
 };
 
-export const stake = async ({
+export const getStakeInstruction = async ({
   provider,
   staker,
   amount,
+  decimals = GFM_DECIMALS,
+  gfmMintAddress = GFM_PUBLIC_KEY,
+  sgfmMintAddress = sGFM_PUBLIC_KEY,
+  currentRecord,
 }: {
   provider: AnchorProvider;
   staker: PublicKey;
   amount: number;
-}) => {
-  const program = getCCProgram(provider);
+  decimals?: number;
+  gfmMintAddress?: PublicKey;
+  sgfmMintAddress?: PublicKey;
+  currentRecord?: number;
+}): Promise<TransactionInstruction> => {
+  const program = getGfmProgram(provider);
   const stakingNetwork = getProgramStakingNetworkPDA(program.programId);
 
-  const { sgfmMintAddress, gfmMintAddress } =
-    await program.account.gfmStakingNetwork.fetch(stakingNetwork);
+  let resolvedGfmMint = gfmMintAddress;
+  let resolvedSgfmMint = sgfmMintAddress;
+  if (!resolvedGfmMint || !resolvedSgfmMint) {
+    const networkData =
+      await program.account.gfmStakingNetwork.fetch(stakingNetwork);
+    resolvedGfmMint = resolvedGfmMint ?? networkData.gfmMintAddress;
+    resolvedSgfmMint = resolvedSgfmMint ?? networkData.sgfmMintAddress;
+  }
+
   const stakerAccountManager = getProgramStakingNetworkUserAccountManager(
+    resolvedGfmMint,
+    staker,
     program.programId,
-    gfmMintAddress,
-    staker
   );
 
-  const { currentRecord } =
-    await program.account.gfmStakerAccountManager.fetch(stakerAccountManager);
+  let resolvedRecord = currentRecord;
+  if (resolvedRecord === undefined) {
+    const managerData =
+      await program.account.gfmStakerAccountManager.fetch(stakerAccountManager);
+    resolvedRecord = managerData.currentRecord;
+  }
 
   const stakerAccount = getProgramStakingNetworkUserAccount(
-    program.programId,
-    gfmMintAddress,
+    resolvedGfmMint,
     staker,
-    currentRecord
+    resolvedRecord,
+    program.programId,
   );
 
   const stakerTokenAccount = getAssociatedTokenAddressSync(
-    gfmMintAddress,
-    staker
+    resolvedGfmMint,
+    staker,
   );
   const stakerSgfmTokenAccount = getAssociatedTokenAddressSync(
-    sgfmMintAddress,
-    staker
+    resolvedSgfmMint,
+    staker,
   );
 
   const stakingNetworkTokenAccount = getAssociatedTokenAddressSync(
-    gfmMintAddress,
+    resolvedGfmMint,
     stakerAccount,
-    true
+    true,
   );
   const networkSgfmTokenAccount = getAssociatedTokenAddressSync(
-    sgfmMintAddress,
+    resolvedSgfmMint,
     stakingNetwork,
-    true
+    true,
+  );
+
+  // Exact decimal multiplication without floating point rounding errors
+  const amountInSmallestUnits = new BN(
+    new Decimal(amount).mul(new Decimal(10).pow(decimals)).toFixed(0),
   );
 
   return await program.methods
-    .stake(new BN(amount * 10 ** 6))
+    .stake(amountInSmallestUnits)
     .accounts({
       staker,
       stakingNetwork,
@@ -181,9 +223,9 @@ export const stake = async ({
       stakerAccount,
       stakerTokenAccount,
       stakingNetworkTokenAccount,
-      mint: gfmMintAddress,
+      mint: resolvedGfmMint,
 
-      sgfmMint: sgfmMintAddress,
+      sgfmMint: resolvedSgfmMint,
       stakerSgfmTokenAccount,
       networkSgfmTokenAccount,
 
@@ -198,44 +240,40 @@ export const stake = async ({
 export const getClaimInstruction = async ({
   record,
   provider,
-  gfmMintAddress,
   staker,
+  gfmMintAddress = GFM_PUBLIC_KEY,
 }: {
   record: number;
   provider: AnchorProvider;
-  gfmMintAddress: PublicKey;
   staker: PublicKey;
-}) => {
-  const program = getCCProgram(provider);
-  const stakeAccount = await program.account.gfmStakerAccount.fetch(
-    getProgramStakingNetworkUserAccount(
-      program.programId,
-      gfmMintAddress,
-      staker,
-      record
-    )
-  );
-
-  if (stakeAccount.userStakedTokens.toNumber() === 0) {
-    throw new Error("No tokens staked in this account.");
-  }
-  const stakingNetwork = getProgramStakingNetworkPDA(program.programId);
-  const stakingTreasuryAccount = getProgramStakingNetworkTreasuryPDA(
-    program.programId,
-    gfmMintAddress
-  );
+  gfmMintAddress?: PublicKey;
+}): Promise<TransactionInstruction> => {
+  const program = getGfmProgram(provider);
 
   const stakerAccount = getProgramStakingNetworkUserAccount(
-    program.programId,
     gfmMintAddress,
     staker,
-    record
+    record,
+    program.programId,
+  );
+
+  const stakeAccount =
+    await program.account.gfmStakerAccount.fetch(stakerAccount);
+
+  if (stakeAccount.userStakedTokens.isZero()) {
+    throw new Error("No tokens staked in this account.");
+  }
+
+  const stakingNetwork = getProgramStakingNetworkPDA(program.programId);
+  const stakingTreasuryAccount = getProgramStakingNetworkTreasuryPDA(
+    gfmMintAddress,
+    program.programId,
   );
 
   const stakerAccountManager = getProgramStakingNetworkUserAccountManager(
-    program.programId,
     gfmMintAddress,
-    staker
+    staker,
+    program.programId,
   );
 
   return await program.methods
@@ -255,71 +293,71 @@ export const getUnstakeInstruction = async ({
   provider,
   staker,
   record,
-  sgfmMintAddress,
-  gfmMintAddress,
+  sgfmMintAddress = sGFM_PUBLIC_KEY,
+  gfmMintAddress = GFM_PUBLIC_KEY,
 }: {
   provider: AnchorProvider;
   staker: PublicKey;
   record: number;
-  sgfmMintAddress: PublicKey;
-  gfmMintAddress: PublicKey;
-}) => {
-  const program = getCCProgram(provider);
+  sgfmMintAddress?: PublicKey;
+  gfmMintAddress?: PublicKey;
+}): Promise<TransactionInstruction[]> => {
+  const program = getGfmProgram(provider);
   const stakingNetwork = getProgramStakingNetworkPDA(program.programId);
 
   const stakingTreasuryAccount = getProgramStakingNetworkTreasuryPDA(
+    gfmMintAddress,
     program.programId,
-    gfmMintAddress
   );
 
   const stakerAccount = getProgramStakingNetworkUserAccount(
-    program.programId,
     gfmMintAddress,
     staker,
-    record
+    record,
+    program.programId,
   );
 
   const stakerTokenAccount = getAssociatedTokenAddressSync(
     gfmMintAddress,
-    staker
+    staker,
   );
 
   const receiverAccount =
     await provider.connection.getAccountInfo(stakerTokenAccount);
-  let instructions: TransactionInstruction[] = [];
+  const instructions: TransactionInstruction[] = [];
   if (!receiverAccount) {
     instructions.push(
       createAssociatedTokenAccountInstruction(
         staker,
         stakerTokenAccount,
         staker,
-        GFM_PUBLIC_KEY,
+        gfmMintAddress,
         TOKEN_PROGRAM_ID,
-        ASSOCIATED_TOKEN_PROGRAM_ID
-      )
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+      ),
     );
   }
 
   const stakerSgfmTokenAccount = getAssociatedTokenAddressSync(
     sgfmMintAddress,
-    staker
+    staker,
   );
 
   const stakingNetworkTokenAccount = getAssociatedTokenAddressSync(
     gfmMintAddress,
     stakerAccount,
-    true
+    true,
   );
   const networkSgfmTokenAccount = getAssociatedTokenAddressSync(
     sgfmMintAddress,
     stakingNetwork,
-    true
+    true,
   );
 
   const stakerAccountManager = getProgramStakingNetworkUserAccountManager(
-    program.programId,
     gfmMintAddress,
-    staker
+    staker,
+    program.programId,
   );
 
   instructions.push(
@@ -344,7 +382,7 @@ export const getUnstakeInstruction = async ({
         tokenProgram: TOKEN_PROGRAM_ID,
         clock: SYSVAR_CLOCK_PUBKEY,
       })
-      .instruction()
+      .instruction(),
   );
   return instructions;
 };
