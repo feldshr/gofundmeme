@@ -1,19 +1,20 @@
 import { useMutation } from "@tanstack/react-query";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey, Transaction } from "@solana/web3.js";
-import { useAnchorProvider, useRoot } from "../../../services/hooks";
+import { useAnchorProvider, useRoot } from "../../../providers/hooks";
 import { createPriorityFeeInstruction } from "../../../solana/utils";
-import { getsSyncStakingNetworkInstruction } from "../../../solana/staking/actions";
+import { getUnstakeInstruction } from "../../../solana/staking/actions";
 
-export default function useSyncNetwork() {
+export default function useUnstake() {
   const { signTransaction, publicKey } = useWallet();
   const { priorityFee } = useRoot();
   const { anchorProvider } = useAnchorProvider();
 
   return useMutation({
     mutationFn: async (payload: {
-      stakingNetwork: PublicKey;
-      stakingNetworkSyncAccount: PublicKey;
+      record: number;
+      sgfmMintAddress: PublicKey;
+      gfmMintAddress: PublicKey;
     }) => {
       if (!anchorProvider) {
         throw new Error("Anchor provider not found");
@@ -22,21 +23,21 @@ export default function useSyncNetwork() {
         throw new Error("Wallet not connected");
       }
 
-      const instruction = await getsSyncStakingNetworkInstruction({
+      const instructions = await getUnstakeInstruction({
         provider: anchorProvider,
-        auth: publicKey,
-        stakingNetwork: payload.stakingNetwork,
-        stakingNetworkSyncAccount: payload.stakingNetworkSyncAccount,
+        staker: publicKey,
+        ...payload,
       });
-      if (!instruction) {
-        throw new Error("Failed to create sync instruction");
+
+      if (!instructions) {
+        throw new Error("Failed to create unstake instruction");
       }
       // Priority fee
       const priorityInstructions = createPriorityFeeInstruction(priorityFee);
 
       // Create and send transaction
       const transaction = new Transaction()
-        .add(instruction)
+        .add(...instructions)
         .add(...priorityInstructions);
       transaction.feePayer = publicKey;
       transaction.recentBlockhash = (

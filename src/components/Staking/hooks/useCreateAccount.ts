@@ -1,20 +1,17 @@
 import { useMutation } from "@tanstack/react-query";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { PublicKey, Transaction } from "@solana/web3.js";
-import { useAnchorProvider, useRoot } from "../../../services/hooks";
+import { Transaction } from "@solana/web3.js";
+import { useAnchorProvider, useRoot } from "../../../providers/hooks";
 import { createPriorityFeeInstruction } from "../../../solana/utils";
-import { getClaimInstruction } from "../../../solana/staking/actions";
+import { createStakerAccount } from "../../../solana/staking/actions";
 
-export default function useClaim() {
+export default function useCreateAccount() {
   const { signTransaction, publicKey } = useWallet();
   const { priorityFee } = useRoot();
   const { anchorProvider } = useAnchorProvider();
 
   return useMutation({
-    mutationFn: async (payload: {
-      record: number;
-      gfmMintAddress: PublicKey;
-    }) => {
+    mutationFn: async () => {
       if (!anchorProvider) {
         throw new Error("Anchor provider not found");
       }
@@ -22,14 +19,12 @@ export default function useClaim() {
         throw new Error("Wallet not connected");
       }
 
-      const instruction = await getClaimInstruction({
+      const instruction = await createStakerAccount({
         provider: anchorProvider,
         staker: publicKey,
-        ...payload,
       });
-
       if (!instruction) {
-        throw new Error("Failed to create claim instruction");
+        throw new Error("Failed to create sync instruction");
       }
       // Priority fee
       const priorityInstructions = createPriorityFeeInstruction(priorityFee);

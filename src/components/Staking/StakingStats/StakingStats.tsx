@@ -11,7 +11,8 @@ import {
 } from "@mantine/core";
 import { IconUsersGroup } from "@tabler/icons-react";
 import classes from "./StakingStats.module.css";
-import { useRoot, useStaking } from "../../../services/hooks";
+import { useRoot } from "../../../providers/hooks";
+import { useStaking } from "../context/StakingContext";
 import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import Timer from "../../Timer/Timer";

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { notifications } from "@mantine/notifications";
 import { IconAlertTriangle, IconCheck, IconX } from "@tabler/icons-react";
-import { useRoot } from "../../../../services/hooks";
+import { useRoot } from "../../../../providers/hooks";
 import { checkIsValidUrl, checkRpcHealth } from "../../../../utils";
 import type { RpcType } from "../../../../constants";
 

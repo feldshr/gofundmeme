@@ -1,4 +1,4 @@
-import React, { type ReactNode, useMemo, createContext } from "react";
+import { type PropsWithChildren, useMemo } from "react";
 import { AnchorProvider as Provider } from "@coral-xyz/anchor";
 import {
   useAnchorWallet,
@@ -6,20 +6,9 @@ import {
   useWallet,
 } from "@solana/wallet-adapter-react";
 import { COMMITMENT } from "../constants";
+import { AnchorContext } from "./AnchorContext";
 
-interface AnchorProviderProps {
-  children: ReactNode;
-}
-
-type AnchorProviderType = {
-  anchorProvider: Provider | null;
-};
-
-const ProviderContext = createContext<AnchorProviderType>(
-  {} as AnchorProviderType,
-);
-
-const AnchorProvider: React.FC<AnchorProviderProps> = ({ children }) => {
+export const AnchorProvider = ({ children }: PropsWithChildren) => {
   const anchorWallet = useAnchorWallet();
   const wallet = useWallet();
   const { connection } = useConnection();
@@ -59,13 +48,13 @@ const AnchorProvider: React.FC<AnchorProviderProps> = ({ children }) => {
     connection,
   ]);
 
+  const value = useMemo(() => ({ anchorProvider }), [anchorProvider]);
+
   return (
-    <ProviderContext.Provider value={{ anchorProvider }}>
+    <AnchorContext.Provider value={value}>
       {children}
-    </ProviderContext.Provider>
+    </AnchorContext.Provider>
   );
 };
 
 export default AnchorProvider;
-
-export { ProviderContext };

@@ -1,7 +1,6 @@
-import type { FC, PropsWithChildren } from "react";
-import { createTheme, MantineProvider, Tooltip } from "@mantine/core";
+import { createTheme, Tooltip } from "@mantine/core";
 
-const theme = createTheme({
+export const theme = createTheme({
   fontFamily: "Fredoka, serif",
   black: "#000",
   colors: {
@@ -40,10 +39,3 @@ const theme = createTheme({
   },
 });
 
-export const MantineService: FC<PropsWithChildren> = ({ children }) => {
-  return (
-    <MantineProvider theme={theme} defaultColorScheme="dark">
-      {children}
-    </MantineProvider>
-  );
-};

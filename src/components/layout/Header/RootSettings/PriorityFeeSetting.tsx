@@ -1,6 +1,6 @@
 import { Box, Group, NumberInput, Text } from "@mantine/core";
 import SolanaLogo from "../../../img/SolanaLogo";
-import { useRoot } from "../../../../services/hooks";
+import { useRoot } from "../../../../providers/hooks";
 import { MIN_PRIORITY_FEE, PRIORITY_FEE_STEP } from "../../../../constants";
 
 export const PriorityFeeSetting = () => {

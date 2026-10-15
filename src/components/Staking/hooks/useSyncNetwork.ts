@@ -1,17 +1,20 @@
 import { useMutation } from "@tanstack/react-query";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Transaction } from "@solana/web3.js";
-import { useAnchorProvider, useRoot } from "../../../services/hooks";
+import { PublicKey, Transaction } from "@solana/web3.js";
+import { useAnchorProvider, useRoot } from "../../../providers/hooks";
 import { createPriorityFeeInstruction } from "../../../solana/utils";
-import { createStakerAccount } from "../../../solana/staking/actions";
+import { getsSyncStakingNetworkInstruction } from "../../../solana/staking/actions";
 
-export default function useCreateAccount() {
+export default function useSyncNetwork() {
   const { signTransaction, publicKey } = useWallet();
   const { priorityFee } = useRoot();
   const { anchorProvider } = useAnchorProvider();
 
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (payload: {
+      stakingNetwork: PublicKey;
+      stakingNetworkSyncAccount: PublicKey;
+    }) => {
       if (!anchorProvider) {
         throw new Error("Anchor provider not found");
       }
@@ -19,9 +22,11 @@ export default function useCreateAccount() {
         throw new Error("Wallet not connected");
       }
 
-      const instruction = await createStakerAccount({
+      const instruction = await getsSyncStakingNetworkInstruction({
         provider: anchorProvider,
-        staker: publicKey,
+        auth: publicKey,
+        stakingNetwork: payload.stakingNetwork,
+        stakingNetworkSyncAccount: payload.stakingNetworkSyncAccount,
       });
       if (!instruction) {
         throw new Error("Failed to create sync instruction");

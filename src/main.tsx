@@ -4,7 +4,7 @@ import "@mantine/notifications/styles.css";
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import Services from "./services";
+import AppProviders from "./providers";
 import { Router } from "./components/Router/Router";
 
 // Render the app
@@ -13,9 +13,9 @@ if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <StrictMode>
-      <Services>
+      <AppProviders>
         <Router />
-      </Services>
+      </AppProviders>
     </StrictMode>,
   );
 }

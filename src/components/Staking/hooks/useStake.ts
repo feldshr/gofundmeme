@@ -1,21 +1,17 @@
 import { useMutation } from "@tanstack/react-query";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { PublicKey, Transaction } from "@solana/web3.js";
-import { useAnchorProvider, useRoot } from "../../../services/hooks";
+import { Transaction } from "@solana/web3.js";
+import { useAnchorProvider, useRoot } from "../../../providers/hooks";
 import { createPriorityFeeInstruction } from "../../../solana/utils";
-import { getUnstakeInstruction } from "../../../solana/staking/actions";
+import { stake } from "../../../solana/staking/actions";
 
-export default function useUnstake() {
+export default function useStake() {
   const { signTransaction, publicKey } = useWallet();
   const { priorityFee } = useRoot();
   const { anchorProvider } = useAnchorProvider();
 
   return useMutation({
-    mutationFn: async (payload: {
-      record: number;
-      sgfmMintAddress: PublicKey;
-      gfmMintAddress: PublicKey;
-    }) => {
+    mutationFn: async (amount: number) => {
       if (!anchorProvider) {
         throw new Error("Anchor provider not found");
       }
@@ -23,21 +19,20 @@ export default function useUnstake() {
         throw new Error("Wallet not connected");
       }
 
-      const instructions = await getUnstakeInstruction({
+      const instruction = await stake({
         provider: anchorProvider,
         staker: publicKey,
-        ...payload,
+        amount,
       });
-
-      if (!instructions) {
-        throw new Error("Failed to create unstake instruction");
+      if (!instruction) {
+        throw new Error("Failed to create stake instruction");
       }
       // Priority fee
       const priorityInstructions = createPriorityFeeInstruction(priorityFee);
 
       // Create and send transaction
       const transaction = new Transaction()
-        .add(...instructions)
+        .add(instruction)
         .add(...priorityInstructions);
       transaction.feePayer = publicKey;
       transaction.recentBlockhash = (

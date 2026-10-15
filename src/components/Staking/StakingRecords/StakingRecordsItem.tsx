@@ -11,10 +11,13 @@ import {
 } from "@mantine/core";
 import dayjs from "dayjs";
 import { useMemo } from "react";
-import { useRoot, useStaking } from "../../../services/hooks";
+import { useRoot } from "../../../providers/hooks";
 import stakedTokenImage from "../../../assets/sGFM.png";
-import type { StakerRecord } from "../../../services/StakingService";
-import { useStakingRecordActions } from "../../../hooks/useStakingRecordActions";
+import {
+  useStaking,
+  type StakerRecord,
+} from "../context/StakingContext";
+import { useStakingRecordActions } from "../hooks/useStakingRecordActions";
 import { getUnlockInfo } from "../../../utils";
 import SolanaLogo from "../../img/SolanaLogo";
 import { DATE_FORMAT } from "../../../constants";

@@ -1,8 +1,11 @@
-import { useContext, useState } from "react";
-import { StakingContext, type StakerRecord } from "../services/StakingService";
+import { useState } from "react";
+import {
+  useStaking,
+  type StakerRecord,
+} from "../context/StakingContext";
 
 export const useStakingRecordActions = (record: StakerRecord) => {
-  const { handleClaim, handleUnstake } = useContext(StakingContext);
+  const { handleClaim, handleUnstake } = useStaking();
 
   const [isClaiming, setIsClaiming] = useState(false);
   const [isUnstaking, setIsUnstaking] = useState(false);

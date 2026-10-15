@@ -1,8 +1,5 @@
 import {
-  type Dispatch,
   type PropsWithChildren,
-  type SetStateAction,
-  createContext,
   useMemo,
 } from "react";
 import { useDisclosure } from "@mantine/hooks";
@@ -14,36 +11,15 @@ import {
 import {
   DEFAULT_PRIORITY_FEE,
   PUBLIC_RPC_URL,
+  SOL_EXPLORERS,
   type ExplorerKey,
   type RpcType,
 } from "../constants";
 import useLocalStorage from "../hooks/useLocalStorage";
 import { checkIsValidUrl } from "../utils";
+import { RootContext, type RootContextType } from "./RootContext";
 
-export type { RpcType };
-
-type RootServiceType = {
-  isFeeModalOpen: boolean;
-  openFeeModal: () => void;
-  closeFeeModal: () => void;
-  priorityFee: number;
-  setPriorityFee: Dispatch<SetStateAction<number>>;
-  solRate?: number;
-  gfmRate?: number;
-  explorer: ExplorerKey;
-  setExplorer: Dispatch<SetStateAction<ExplorerKey>>;
-  rpcType: RpcType;
-  setRpcType: Dispatch<SetStateAction<RpcType>>;
-  customRpc: string;
-  setCustomRpc: Dispatch<SetStateAction<string>>;
-  activeRpc: string;
-};
-
-export const RootContext = createContext<RootServiceType>(
-  {} as RootServiceType,
-);
-
-export const RootService = ({ children }: PropsWithChildren) => {
+export const RootProvider = ({ children }: PropsWithChildren) => {
   const { data: solRate } = useQuery(getSolUsdRateOptions());
   const { data: gfmRate } = useQuery(getGfmUsdRateOptions());
   const [isFeeModalOpen, { open: openFeeModal, close: closeFeeModal }] =
@@ -54,7 +30,7 @@ export const RootService = ({ children }: PropsWithChildren) => {
   );
   const [explorer, setExplorer] = useLocalStorage<ExplorerKey>(
     "explorer",
-    "solscan",
+    [...Object.keys(SOL_EXPLORERS)][0] as ExplorerKey,
   );
   const [rpcType, setRpcType] = useLocalStorage<RpcType>("rpcType", "public");
   const [customRpc, setCustomRpc] = useLocalStorage<string>("customRpc", "");
@@ -66,22 +42,42 @@ export const RootService = ({ children }: PropsWithChildren) => {
     return PUBLIC_RPC_URL;
   }, [rpcType, customRpc]);
 
-  const value: RootServiceType = {
-    isFeeModalOpen,
-    openFeeModal,
-    closeFeeModal,
-    priorityFee,
-    setPriorityFee,
-    solRate: solRate ?? undefined,
-    gfmRate: gfmRate ?? undefined,
-    explorer,
-    setExplorer,
-    rpcType,
-    setRpcType,
-    customRpc,
-    setCustomRpc,
-    activeRpc,
-  };
+  const value = useMemo<RootContextType>(
+    () => ({
+      isFeeModalOpen,
+      openFeeModal,
+      closeFeeModal,
+      priorityFee,
+      setPriorityFee,
+      solRate: solRate ?? undefined,
+      gfmRate: gfmRate ?? undefined,
+      explorer,
+      setExplorer,
+      rpcType,
+      setRpcType,
+      customRpc,
+      setCustomRpc,
+      activeRpc,
+    }),
+    [
+      isFeeModalOpen,
+      openFeeModal,
+      closeFeeModal,
+      priorityFee,
+      setPriorityFee,
+      solRate,
+      gfmRate,
+      explorer,
+      setExplorer,
+      rpcType,
+      setRpcType,
+      customRpc,
+      setCustomRpc,
+      activeRpc,
+    ],
+  );
 
   return <RootContext.Provider value={value}>{children}</RootContext.Provider>;
 };
+
+export default RootProvider;

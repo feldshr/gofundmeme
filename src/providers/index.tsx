@@ -1,26 +1,26 @@
-import { WalletService } from "./WalletService";
-import { RootService } from "./RootService";
 import type { PropsWithChildren } from "react";
-import AnchorProvider from "./AnchorProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MantineService } from "./MantineService";
 import { Notifications } from "@mantine/notifications";
+import { ThemeProvider } from "./ThemeProvider";
+import { RootProvider } from "./RootProvider";
+import { WalletProvider } from "./WalletProvider";
+import { AnchorProvider } from "./AnchorProvider";
 
 const queryClient = new QueryClient();
 
-const Services = ({ children }: PropsWithChildren) => {
+export const AppProviders = ({ children }: PropsWithChildren) => {
   return (
     <QueryClientProvider client={queryClient}>
-      <MantineService>
+      <ThemeProvider>
         <Notifications limit={5} autoClose={3000} position="top-center" />
-        <RootService>
-          <WalletService>
+        <RootProvider>
+          <WalletProvider>
             <AnchorProvider>{children}</AnchorProvider>
-          </WalletService>
-        </RootService>
-      </MantineService>
+          </WalletProvider>
+        </RootProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };
 
-export default Services;
+export default AppProviders;

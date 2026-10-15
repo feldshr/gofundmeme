@@ -1,8 +1,8 @@
 import "@solana/wallet-adapter-react-ui/styles.css";
-import type { PropsWithChildren } from "react";
+import { useMemo, type PropsWithChildren } from "react";
 import {
   ConnectionProvider,
-  WalletProvider,
+  WalletProvider as SolanaWalletProvider,
 } from "@solana/wallet-adapter-react";
 import {
   LedgerWalletAdapter,
@@ -12,25 +12,31 @@ import {
   PhantomWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
+import { NETWORK } from "../constants";
 import { useRoot } from "./hooks";
 
-export const WalletService = ({ children }: PropsWithChildren) => {
+export const WalletProvider = ({ children }: PropsWithChildren) => {
   const { activeRpc } = useRoot();
 
-  const wallets = [
-    new PhantomWalletAdapter(),
-    new CoinbaseWalletAdapter(),
-    new SolflareWalletAdapter({ network: WalletAdapterNetwork.Mainnet }),
-    new LedgerWalletAdapter(),
-    new TorusWalletAdapter(),
-  ];
+  const wallets = useMemo(
+    () => [
+      new PhantomWalletAdapter(),
+      new CoinbaseWalletAdapter(),
+      new SolflareWalletAdapter({ network: NETWORK }),
+      new LedgerWalletAdapter(),
+      new TorusWalletAdapter(),
+    ],
+    [],
+  );
 
   return (
     <ConnectionProvider endpoint={activeRpc}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <SolanaWalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>{children}</WalletModalProvider>
-      </WalletProvider>
+      </SolanaWalletProvider>
     </ConnectionProvider>
   );
 };
+
+export default WalletProvider;
+

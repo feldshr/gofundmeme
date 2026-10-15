@@ -1,5 +1,5 @@
 import { Group, Select, Text } from "@mantine/core";
-import { useRoot } from "../../../../services/hooks";
+import { useRoot } from "../../../../providers/hooks";
 import { EXPLORER_SELECT_DATA, type ExplorerKey } from "../../../../constants";
 
 export const ExplorerSetting = () => {

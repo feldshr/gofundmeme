@@ -2,14 +2,11 @@ import { Avatar, Box, Button, Flex, NumberInput, Text } from "@mantine/core";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { IconPhotoOff, IconX } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  useAnchorProvider,
-  useRoot,
-  useStaking,
-} from "../../../services/hooks";
+import { useAnchorProvider, useRoot } from "../../../providers/hooks";
+import { useStaking } from "../context/StakingContext";
 import { isInRange, useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import useStake from "../../../hooks/queries/staking/useStake";
+import useStake from "../hooks/useStake";
 import tokenImage from "../../../assets/GFM.png";
 import { showTransactionState } from "../../../solana/utils";
 

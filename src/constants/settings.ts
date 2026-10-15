@@ -15,6 +15,10 @@ export const RPC_SELECT_DATA = [
 ] as const;
 
 export const SOL_EXPLORERS = {
+  orb: {
+    label: "orb",
+    href: "https://orbmarkets.io/",
+  },
   solscan: {
     label: "Solscan",
     href: "https://solscan.io/",

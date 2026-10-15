@@ -1,17 +1,14 @@
 import { Box, Center, Divider, Flex, Loader, Stack, Text } from "@mantine/core";
 import { IconX } from "@tabler/icons-react";
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  useAnchorProvider,
-  useRoot,
-  useStaking,
-} from "../../../services/hooks";
+import { useAnchorProvider, useRoot } from "../../../providers/hooks";
+import { useStaking } from "../context/StakingContext";
 import { useWallet } from "@solana/wallet-adapter-react";
 import {
   getAccountBalance,
   getStakerStakeAccounts,
 } from "../../../solana/staking/states";
-import useCreateAccount from "../../../hooks/queries/staking/useCreateAccount";
+import useCreateAccount from "../hooks/useCreateAccount";
 import { notifications } from "@mantine/notifications";
 import StakingRecords from "../StakingRecords/StakingRecords";
 import StakeForm from "../StakeForm/StakeForm";
